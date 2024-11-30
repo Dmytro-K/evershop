@@ -6,6 +6,7 @@ const isProductionMode = require('../util/isProductionMode');
 const { getEnabledExtensions } = require('../../../bin/extension');
 const { getConfig } = require('../util/getConfig');
 const { loadCsvTranslationFiles } = require('./loaders/loadTranslationFromCsv');
+const webpack = require("webpack");
 
 module.exports.createBaseConfig = function createBaseConfig(isServer) {
   const extenions = getEnabledExtensions();
@@ -121,6 +122,19 @@ module.exports.createBaseConfig = function createBaseConfig(isServer) {
     plugins: [],
     cache: { type: 'memory' }
   };
+
+  if (!isServer)
+  {
+    config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+            /node:crypto/,
+            (resource) => {
+              resource.request = resource.request.replace(/^node:/, '');
+            }
+        )
+    );
+    config.plugins.push(new webpack.IgnorePlugin({resourceRegExp: /jsdom$/}));
+  }
 
   // Resolve aliases
   const alias = {};
